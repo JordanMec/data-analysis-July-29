@@ -64,39 +64,47 @@ xtickangle(45);
 title('Pollution Event Statistics');
 grid on;
 
+
 % Response effectiveness scatter
 subplot(2, 3, 2);
 colors = lines(length(configs));
-peak_tight = NaN(1,length(configs));
-peak_leaky = NaN(1,length(configs));
-int_tight = NaN(1,length(configs));
-int_leaky = NaN(1,length(configs));
-filterTypes = cell(1,length(configs));
-
-for i = 1:length(configs)
-    config = configs{i};
-    data = eventAnalysis.(config);
-    filterTypes{i} = data.filterType;
-    if isfield(data, 'pm25_response') && isfield(data.pm25_response, 'avg_peak_reduction_bounds')
-        resp = data.pm25_response;
-        peak_tight(i) = resp.avg_peak_reduction_bounds(1);
-        peak_leaky(i) = resp.avg_peak_reduction_bounds(2);
-        int_tight(i) = resp.avg_integrated_reduction_bounds(1);
-        int_leaky(i) = resp.avg_integrated_reduction_bounds(2);
-    end
-end
 
 hold on;
 for i = 1:length(configs)
-    if strcmpi(filterTypes{i}, 'HEPA')
+    config = configs{i};
+    data = eventAnalysis.(config);
+
+    % Choose marker by filter type to visually differentiate
+    if strcmpi(data.filterType, 'HEPA')
         marker = 'o';
     else
         marker = 's';
     end
-    if ~isnan(peak_tight(i)) && ~isnan(peak_leaky(i))
-        plot([peak_leaky(i) peak_tight(i)], [int_leaky(i) int_tight(i)], '-', 'Color', colors(i,:));
-        scatter(peak_leaky(i), int_leaky(i), 70, 'Marker', marker, 'MarkerFaceColor', colors(i,:), 'MarkerEdgeColor', 'k', 'HandleVisibility','off');
-        scatter(peak_tight(i), int_tight(i), 70, 'Marker', marker, 'MarkerFaceColor', colors(i,:), 'MarkerEdgeColor', 'k', 'DisplayName', labels{i});
+
+    if isfield(data, 'pm25_response')
+        resp = data.pm25_response;
+        % Combine tight and leaky event metrics
+        if isfield(resp, 'peak_reductions_tight') && isfield(resp, 'peak_reductions_leaky') && ...
+           isfield(resp, 'integrated_reductions_tight') && isfield(resp, 'integrated_reductions_leaky')
+            xVals = [resp.peak_reductions_tight(:); resp.peak_reductions_leaky(:)];
+            yVals = [resp.integrated_reductions_tight(:); resp.integrated_reductions_leaky(:)];
+        else
+            % Fall back to average metrics if per-event data unavailable
+            if isfield(resp, 'avg_peak_reduction') && isfield(resp, 'avg_integrated_reduction')
+                xVals = resp.avg_peak_reduction;
+                yVals = resp.avg_integrated_reduction;
+            else
+                xVals = [];
+                yVals = [];
+            end
+        end
+
+        mask = isfinite(xVals) & isfinite(yVals);
+        if any(mask)
+            scatter(xVals(mask), yVals(mask), 60, 'Marker', marker, ...
+                'MarkerFaceColor', colors(i,:), 'MarkerEdgeColor', 'k', ...
+                'DisplayName', labels{i});
+        end
     end
 end
 
@@ -108,7 +116,7 @@ legend('Location','best');
 
 % Add diagonal reference line
 lims = [0 100];
-plot(lims, lims, 'k--', 'LineWidth', 0.5);
+plot(lims, lims, 'k--', 'LineWidth', 0.5, 'HandleVisibility','off');
 
 % Event severity distribution
 subplot(2, 3, 3);
