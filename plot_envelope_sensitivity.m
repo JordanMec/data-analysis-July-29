@@ -82,14 +82,14 @@ for i = 1:nScenarios
     if ~isnan(tightSum.filter_replaced) && ~isnan(leakySum.filter_replaced)
         if abs(tightSum.filter_replaced) < epsilon
             filter_change = leakySum.filter_replaced - tightSum.filter_replaced;
-            filter_method = 'absolute';
+            filter_life_method = 'absolute';
         else
             filter_change = 100 * (leakySum.filter_replaced - tightSum.filter_replaced) / tightSum.filter_replaced;
-            filter_method = 'percent';
+            filter_life_method = 'percent';
         end
     else
         filter_change = NaN;
-        filter_method = 'missing';
+        filter_life_method = 'missing';
     end
 
     % Get cost-effectiveness data (keep existing logic)
@@ -153,11 +153,11 @@ for i = 1:nScenarios
     % Build sensitivity row with methods
     row = table({loc}, {filt}, {mode}, pm25_change, pm10_change, cost_change, ...
         filter_change, effectiveness_change, cost_per_aqi_change, ...
-        {pm25_method}, {pm10_method}, {cost_method}, {filter_method}, ...
+        {pm25_method}, {pm10_method}, {cost_method}, {filter_life_method}, ...
         'VariableNames', {'location','filterType','mode', ...
         'pm25_sensitivity','pm10_sensitivity','cost_sensitivity', ...
         'filter_life_sensitivity','effectiveness_change','cost_effectiveness_sensitivity', ...
-        'pm25_method','pm10_method','cost_method','filter_method'});
+        'pm25_method','pm10_method','cost_method','filter_life_method'});
 
     sensitivity = [sensitivity; row];
 end
@@ -279,7 +279,7 @@ method_labels = {'Standard %', 'Symmetric %', 'Absolute Δ', 'Missing', 'Both Ze
 
 for i = 1:height(sensitivity)
     methods = {sensitivity.pm25_method{i}, sensitivity.pm10_method{i}, ...
-               sensitivity.cost_method{i}, sensitivity.filter_method{i}};
+               sensitivity.cost_method{i}, sensitivity.filter_life_method{i}};
     for m = 1:length(methods)
         idx = find(strcmp(methods{m}, method_types));
         if ~isempty(idx)
