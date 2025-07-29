@@ -64,7 +64,11 @@ for i = 1:length(configs)
         else
             stab_lower(i) = NaN; stab_upper(i) = NaN;
         end
-        labels{i} = sprintf('%s\n%s Filter', strrep(data.location, '_', ' '), upper(data.filterType));
+        % Use single-line labels combining location and filter type
+        % to avoid issues where newline characters create separate
+        % tick marks on some rendering backends.
+        labels{i} = sprintf('%s - %s Filter', ...
+            strrep(data.location, '_', ' '), upper(data.filterType));
     end
 end
 

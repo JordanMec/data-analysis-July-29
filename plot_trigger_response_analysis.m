@@ -419,7 +419,10 @@ for i = 1:length(configs)
     data = temporalAnalysis.(config);
     if isfield(data, 'stability_score')
         stability_scores(i) = data.stability_score;
-        labels{i} = sprintf('%s\n%s Filter', strrep(data.location, '_', ' '), upper(data.filterType));
+        % Use single-line labels to clearly show both location and filter
+        % type, preventing duplicated tick marks on some backends.
+        labels{i} = sprintf('%s - %s Filter', ...
+            strrep(data.location, '_', ' '), upper(data.filterType));
     end
 end
 
