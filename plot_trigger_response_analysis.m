@@ -731,6 +731,8 @@ nConfigs = numel(configs);
 colors = lines(nConfigs);
 hold on;
 
+legendHandles = gobjects(nConfigs,1);
+
 offsets = linspace(-0.3, 0.3, nConfigs);
 maxEvents = 0;
 
@@ -751,23 +753,30 @@ for i = 1:nConfigs
 
     maxEvents = max(maxEvents, nEv);
 
+    xSeries = NaN(1,nEv);
+    ySeries = NaN(1,nEv);
     for j = 1:nEv
         x = j + offsets(i);
         if isfield(resp, 'peak_reductions_tight') && isfield(resp, 'peak_reductions_leaky')
             yVals = sort([resp.peak_reductions_tight(j), resp.peak_reductions_leaky(j)]);
             plot([x x], yVals, '-', 'Color', colors(i,:), 'LineWidth', 1.5);
             scatter([x x], yVals, 20, 'filled', 'MarkerFaceColor', colors(i,:), 'MarkerEdgeColor', 'k');
+            ySeries(j) = mean(yVals);
         else
             yVal = resp.peak_reductions(j);
             scatter(x, yVal, 30, 'filled', 'MarkerFaceColor', colors(i,:), 'MarkerEdgeColor', 'k');
+            ySeries(j) = yVal;
         end
+        xSeries(j) = x;
     end
+    plot(xSeries, ySeries, '-', 'Color', colors(i,:), 'LineWidth', 1, 'HandleVisibility', 'off');
+    legendHandles(i) = scatter(NaN, NaN, 30, 'filled', 'MarkerFaceColor', colors(i,:), 'MarkerEdgeColor', 'k');
 end
 
 xlabel('Event Index');
 ylabel('Peak Reduction (%)');
 title('Event Response Metrics by Event');
-legend(strrep(configs,'_',' '), 'Location','best');
+legend(legendHandles, strrep(configs,'_',' '), 'Location','best');
 grid on;
 xlim([0 maxEvents + 1]);
 end
