@@ -16,6 +16,8 @@ configs = fieldnames(temporalAnalysis);
 subplot(2, 2, 1);
 hold on;
 colors = lines(length(configs));
+diurnalHandles = [];
+diurnalLabels = {};
 
 for i = 1:length(configs)
     config = configs{i};
@@ -26,15 +28,21 @@ for i = 1:length(configs)
                  [data.diurnal_io_ratio_lower' fliplr(data.diurnal_io_ratio_upper')], ...
                  colors(i,:), 'FaceAlpha',0.2,'EdgeColor','none');
         end
-        plot(0:23, data.diurnal_io_ratio, 'o-', 'Color', colors(i,:), ...
+        h = plot(0:23, data.diurnal_io_ratio, 'o-', 'Color', colors(i,:), ...
             'LineWidth', 2, 'MarkerSize', 6);
+        diurnalHandles(end+1) = h; %#ok<AGROW>
+        diurnalLabels{end+1} = strrep(config, '_', ' '); %#ok<AGROW>
     end
 end
 
 xlabel('Hour of Day');
 ylabel('Average I/O Ratio');
 title('Diurnal Pattern of Filtration Performance');
-legend(strrep(configs, '_', ' '), 'Location', 'best');
+if ~isempty(diurnalHandles)
+    legend(diurnalHandles, diurnalLabels, 'Location', 'best');
+else
+    legend(strrep(configs, '_', ' '), 'Location', 'best');
+end
 grid on;
 xlim([-0.5 23.5]);
 
@@ -75,25 +83,38 @@ grid on;
 subplot(2, 2, [3 4]);
 hold on;
 
+lineHandles = [];
+legendLabels = {};
 for i = 1:length(configs)
     config = configs{i};
     data = temporalAnalysis.(config);
-    if isfield(data, 'performance_trend')
+    if isfield(data, 'performance_trend') && ~isempty(data.performance_trend)
         days = 1:length(data.performance_trend);
-        if isfield(data, 'performance_trend_tight')
+        if isfield(data, 'performance_trend_lower')
             fill([days fliplr(days)], ...
-                 [data.performance_trend_tight fliplr(data.performance_trend_leaky)], ...
+                 [data.performance_trend_lower fliplr(data.performance_trend_upper)], ...
+                 colors(i,:), 'FaceAlpha',0.2,'EdgeColor','none');
+        elseif isfield(data, 'performance_trend_tight')
+            lowerVals = min(data.performance_trend_tight, data.performance_trend_leaky);
+            upperVals = max(data.performance_trend_tight, data.performance_trend_leaky);
+            fill([days fliplr(days)], [lowerVals fliplr(upperVals)], ...
                  colors(i,:), 'FaceAlpha',0.2,'EdgeColor','none');
         end
-        plot(days, data.performance_trend, 'o-', 'Color', colors(i,:), ...
-            'LineWidth', 1.5, 'MarkerSize', 4);
+        h = plot(days, data.performance_trend, 'o-', 'Color', colors(i,:), ...
+                 'LineWidth', 1.5, 'MarkerSize', 4);
+        lineHandles(end+1) = h; %#ok<AGROW>
+        legendLabels{end+1} = strrep(config, '_', ' '); %#ok<AGROW>
     end
 end
 
 xlabel('Day');
 ylabel('Daily Average I/O Ratio');
 title('Performance Trend Over Time');
-legend(strrep(configs, '_', ' '), 'Location', 'best');
+if ~isempty(lineHandles)
+    legend(lineHandles, legendLabels, 'Location', 'best');
+else
+    legend(strrep(configs, '_', ' '), 'Location', 'best');
+end
 grid on;
 
 sgtitle('Temporal Patterns in Active Mode Performance', 'FontSize', 14, 'FontWeight', 'bold');
