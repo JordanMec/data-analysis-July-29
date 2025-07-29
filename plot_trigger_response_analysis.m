@@ -122,7 +122,17 @@ if nargin >= 3 && ~isempty(activeData) && isfield(activeData, config)
         params = get_analysis_params();
     end
     tvec = (1:numel(series.outdoor_PM25))';
-    events = detect_outdoor_events(series.outdoor_PM25, tvec, 'PM2.5', params);
+    events = [];
+    if isfield(series, 'intervention_on')
+        events = detect_intervention_events(series.intervention_on, ...
+            series.outdoor_PM25, tvec, params);
+    elseif isfield(series, 'fan_status')
+        events = detect_intervention_events(series.fan_status, ...
+            series.outdoor_PM25, tvec, params);
+    else
+        events = detect_outdoor_events(series.outdoor_PM25, tvec, 'PM2.5', params);
+    end
+
     if ~isempty(events)
         eventTbl = compute_event_metrics_table(string(config), "PM2.5", events, ...
             series.outdoor_PM25(:), series.indoor_PM25_mean(:), params, tvec);
@@ -716,9 +726,11 @@ for i = 1:n
     end
 end
 
-xlabel('Hours Relative to Outdoor Peak');
-ylabel('Event Number');
-title(sprintf('Event Timeline - %s', strrep(configName,'_',' ')));
+    xlabel('Hours Relative to Outdoor Peak');
+    ylabel('Event Number');
+    yticks(1:n);
+    ylim([0 n+1]);
+    title(sprintf('Event Timeline - %s', strrep(configName,'_',' ')));
 legend({'Rise','Lag','Recovery'}, 'Location','best');
 grid on;
 end
