@@ -101,6 +101,10 @@ for i = 1:length(configs)
         
         temporalAnalysis.(config).performance_trend_tight = daily_averages_tight;
         temporalAnalysis.(config).performance_trend_leaky = daily_averages_leaky;
+        % Explicitly store lower and upper bounds for clarity
+        temporalAnalysis.(config).performance_trend_lower = min(daily_averages_tight, daily_averages_leaky);
+        temporalAnalysis.(config).performance_trend_upper = max(daily_averages_tight, daily_averages_leaky);
+
         temporalAnalysis.(config).performance_trend = (daily_averages_tight + daily_averages_leaky) / 2;
     else
         temporalAnalysis.(config).stability_score = NaN;
