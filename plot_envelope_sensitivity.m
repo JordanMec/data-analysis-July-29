@@ -206,7 +206,7 @@ grid on;
 % Add note about mixed methods
 text(0.95, 0.05, 'Note: Absolute differences normalized for comparison', ...
     'Units', 'normalized', 'HorizontalAlignment', 'right', ...
-    'VerticalAlignment', 'bottom', 'FontSize', 8, 'FontStyle', 'italic');
+    'VerticalAlignment', 'bottom', 'FontSize', 8, 'FontAngle', 'italic');
 
 % 2. Scenario comparison (existing code with minor modification)
 subplot(2,2,2);
