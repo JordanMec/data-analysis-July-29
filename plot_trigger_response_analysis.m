@@ -609,7 +609,7 @@ if isfield(data, 'hourly_ci_pm25')
     xlabel('Hour');
     ylabel('Indoor PM2.5 (μg/m³)');
     title(sprintf('Confidence Intervals - %s', config));
-    legend({'95% CI', 'Mean'}, 'Location', 'best');
+    legend({'Envelope Bounds', 'Mean'}, 'Location', 'best');
     grid on;
 end
 
