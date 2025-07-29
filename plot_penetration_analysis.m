@@ -63,8 +63,12 @@ ylim([0 1]);
 subplot(2, 2, 2);
 pm25_removal = (1 - pm25_factors) * 100;
 pm10_removal = (1 - pm10_factors) * 100;
-pm25_removal_bounds = (1 - pm25_bounds) * 100;
-pm10_removal_bounds = (1 - pm10_bounds) * 100;
+% Bounds are provided as [tightMean, leakyMean] and may not be ordered.
+% Sort penetration bounds so we can derive valid removal efficiency bounds
+pm25_pen_sorted = sort(pm25_bounds, 2);  % [lowPen, highPen]
+pm10_pen_sorted = sort(pm10_bounds, 2);
+pm25_removal_bounds = (1 - fliplr(pm25_pen_sorted)) * 100; % [minRem, maxRem]
+pm10_removal_bounds = (1 - fliplr(pm10_pen_sorted)) * 100;
 
 hR25 = bar(x - width/2, pm25_removal, width, 'FaceColor', cmap.pm25);
 hold on;
