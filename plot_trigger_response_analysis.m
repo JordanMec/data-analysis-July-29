@@ -194,8 +194,11 @@ ylim([0 1]);
 subplot(2, 2, 2);
 pm25_removal = (1 - pm25_factors) * 100;
 pm10_removal = (1 - pm10_factors) * 100;
-pm25_removal_bounds = (1 - pm25_bounds) * 100;
-pm10_removal_bounds = (1 - pm10_bounds) * 100;
+% Bounds come as [tightMean, leakyMean]; ensure lower bound first
+pm25_pen_sorted = sort(pm25_bounds, 2);  % ascending penetration
+pm10_pen_sorted = sort(pm10_bounds, 2);
+pm25_removal_bounds = (1 - fliplr(pm25_pen_sorted)) * 100;
+pm10_removal_bounds = (1 - fliplr(pm10_pen_sorted)) * 100;
 
 bar(x - width/2, pm25_removal, width, 'FaceColor', [0.2 0.4 0.8]);
 hold on;
