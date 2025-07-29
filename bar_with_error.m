@@ -1,6 +1,7 @@
 function bar_with_error(categories, values, errLow, errHigh, color, yLabel, xLabel, titleStr, savePath)
 if nargin < 5 || isempty(color)
-    color = [0.2 0.6 0.8];
+    cmap = get_color_map();
+    color = cmap.tight; % default bar color
 end
 fig = create_hidden_figure();
 nexttile;

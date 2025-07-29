@@ -13,6 +13,7 @@ figure('Position', [100 100 1400 900], 'Visible', 'off');
 
 configs = fieldnames(penetrationAnalysis);
 nConfigs = length(configs);
+cmap = get_color_map();
 
 % Penetration factors comparison
 subplot(2, 2, 1);
@@ -39,9 +40,9 @@ x = 1:nConfigs;
 width = 0.35;
 
 % Plot with error bars
-hPM25 = bar(x - width/2, pm25_factors, width, 'FaceColor', [0.2 0.4 0.8]);
+hPM25 = bar(x - width/2, pm25_factors, width, 'FaceColor', cmap.pm25);
 hold on;
-hPM10 = bar(x + width/2, pm10_factors, width, 'FaceColor', [0.8 0.3 0.3]);
+hPM10 = bar(x + width/2, pm10_factors, width, 'FaceColor', cmap.pm10);
 
 % Add error bars for bounds
 errorbar(x - width/2, pm25_factors, ...
@@ -65,9 +66,9 @@ pm10_removal = (1 - pm10_factors) * 100;
 pm25_removal_bounds = (1 - pm25_bounds) * 100;
 pm10_removal_bounds = (1 - pm10_bounds) * 100;
 
-hR25 = bar(x - width/2, pm25_removal, width, 'FaceColor', [0.2 0.4 0.8]);
+hR25 = bar(x - width/2, pm25_removal, width, 'FaceColor', cmap.pm25);
 hold on;
-hR10 = bar(x + width/2, pm10_removal, width, 'FaceColor', [0.8 0.3 0.3]);
+hR10 = bar(x + width/2, pm10_removal, width, 'FaceColor', cmap.pm10);
 
 % Add error bars for bounds
 errorbar(x - width/2, pm25_removal, ...
@@ -89,7 +90,7 @@ size_ratio = pm10_factors ./ pm25_factors;
 ratio_bounds(:,1) = pm10_bounds(:,1) ./ pm25_bounds(:,2);
 ratio_bounds(:,2) = pm10_bounds(:,2) ./ pm25_bounds(:,1);
 
-hRatio = bar(size_ratio, 'FaceColor', [0.6 0.6 0.6]);
+hRatio = bar(size_ratio, 'FaceColor', cmap.gray);
 hold on;
 errorbar(x, size_ratio, ...
     size_ratio - ratio_bounds(:,1)', ratio_bounds(:,2)' - size_ratio, ...

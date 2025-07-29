@@ -28,6 +28,7 @@ for i = 1:nConfigs
 end
 
 colors = lines(nConfigs);
+cmap = get_color_map();
 
 %% Panel 1: Overall Efficacy Score Ranking with Confidence Intervals
 nexttile;
@@ -81,9 +82,9 @@ hold on;
 
 % Plot tight vs leaky scores
 plot(1:nConfigs, efficacyScoreTable.tight_efficacy_score, 'o-', ...
-    'Color', [0.2 0.6 0.8], 'LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'Tight Envelope');
+    'Color', cmap.tight, 'LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'Tight Envelope');
 plot(1:nConfigs, efficacyScoreTable.leaky_efficacy_score, 's--', ...
-    'Color', [0.8 0.4 0.2], 'LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'Leaky Envelope');
+    'Color', cmap.leaky, 'LineWidth', 2, 'MarkerSize', 6, 'DisplayName', 'Leaky Envelope');
 
 set(gca, 'XTick', 1:nConfigs, 'XTickLabel', scenarioLabels);
 xtickangle(45);
@@ -94,7 +95,7 @@ grid on;
 
 %% Panel 4: Score Range (Uncertainty) Analysis
 nexttile;
-bar(efficacyScoreTable.score_range, 'FaceColor', [0.6 0.6 0.6], 'EdgeColor', 'k');
+bar(efficacyScoreTable.score_range, 'FaceColor', cmap.gray, 'EdgeColor', 'k');
 set(gca, 'XTick', 1:nConfigs, 'XTickLabel', scenarioLabels);
 xtickangle(45);
 ylabel('Score Range (Tight - Leaky)');
