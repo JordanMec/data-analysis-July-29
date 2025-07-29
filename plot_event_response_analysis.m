@@ -159,7 +159,9 @@ end
 
 function plot_example_event_responses(eventAnalysis)
 %PLOT_EXAMPLE_EVENT_RESPONSES Visualize individual event metrics
-%   Displays vertical ranges of peak reduction for each detected event
+%   Displays peak reduction range for each detected event. If tight and
+%   leaky values are available both are drawn, otherwise the single series
+%   of peak reductions is shown.
 
 configs = fieldnames(eventAnalysis);
 nConfigs = numel(configs);
@@ -171,19 +173,31 @@ maxEvents = 0;
 
 for i = 1:nConfigs
     config = configs{i};
-    if isfield(eventAnalysis.(config), 'pm25_response')
-        resp = eventAnalysis.(config).pm25_response;
+    if ~isfield(eventAnalysis.(config), 'pm25_response')
+        continue;
+    end
+    resp = eventAnalysis.(config).pm25_response;
+
+    % Determine number of events based on available fields
+    if isfield(resp, 'peak_reductions_tight') && isfield(resp, 'peak_reductions_leaky')
+        nEv = min(numel(resp.peak_reductions_tight), numel(resp.peak_reductions_leaky));
+    elseif isfield(resp, 'peak_reductions')
         nEv = numel(resp.peak_reductions);
-        maxEvents = max(maxEvents, nEv);
+    else
+        nEv = 0;
+    end
+
+    maxEvents = max(maxEvents, nEv);
+
+    for j = 1:nEv
+        x = j + offsets(i);
         if isfield(resp, 'peak_reductions_tight') && isfield(resp, 'peak_reductions_leaky')
-            for j = 1:nEv
-                x = j + offsets(i);
-                y1 = resp.peak_reductions_leaky(j);
-                y2 = resp.peak_reductions_tight(j);
-                plot([x x], [y1 y2], '-', 'Color', colors(i,:), 'LineWidth', 1.5);
-                scatter([x x], [y1 y2], 20, 'filled', ...
-                    'MarkerFaceColor', colors(i,:), 'MarkerEdgeColor', 'k');
-            end
+            yVals = sort([resp.peak_reductions_tight(j), resp.peak_reductions_leaky(j)]);
+            plot([x x], yVals, '-', 'Color', colors(i,:), 'LineWidth', 1.5);
+            scatter([x x], yVals, 20, 'filled', 'MarkerFaceColor', colors(i,:), 'MarkerEdgeColor', 'k');
+        else
+            yVal = resp.peak_reductions(j);
+            scatter(x, yVal, 30, 'filled', 'MarkerFaceColor', colors(i,:), 'MarkerEdgeColor', 'k');
         end
     end
 end
