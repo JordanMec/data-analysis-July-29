@@ -131,6 +131,7 @@ labels = {'Building Envelope','Outdoor Variability','System Response','Measureme
 
 barh(sortedVals, 'FaceColor', [0.4 0.6 0.8]);
 set(gca,'YTick',1:numel(order),'YTickLabel',labels(order));
+set(gca,'YDir','reverse');
 xlabel('Contribution (%)');
 title('Sensitivity Analysis');
 grid on;
