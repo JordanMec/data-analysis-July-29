@@ -1,17 +1,21 @@
 function plot_envelope_sensitivity(summaryTable, costTable, figuresDir)
 % PLOT_ENVELOPE_SENSITIVITY Analyze sensitivity to building envelope tightness
+% Enhanced version with robust zero handling
 if isempty(summaryTable) || isempty(costTable)
     warning('plot_envelope_sensitivity: no data provided, skipping plot.');
     return;
 end
 figure('Position',[100 100 1200 800],'Visible','off');
 
-%% Calculate sensitivity indices
+%% Calculate sensitivity indices with enhanced zero handling
 scenarios = unique(summaryTable(~strcmp(summaryTable.mode,'baseline'), ...
     {'location','filterType','mode'}));
 
 nScenarios = height(scenarios);
 sensitivity = table();
+
+% Define epsilon for near-zero detection
+epsilon = 1e-6;
 
 for i = 1:nScenarios
     loc = scenarios.location{i};
@@ -30,19 +34,65 @@ for i = 1:nScenarios
 
     if isempty(tightSum) || isempty(leakySum), continue; end
 
-    % Calculate percentage change from tight to leaky
-    pm25_change = 100 * (leakySum.avg_indoor_PM25 - tightSum.avg_indoor_PM25) / tightSum.avg_indoor_PM25;
-    pm10_change = 100 * (leakySum.avg_indoor_PM10 - tightSum.avg_indoor_PM10) / tightSum.avg_indoor_PM10;
-    cost_change = 100 * (leakySum.total_cost - tightSum.total_cost) / tightSum.total_cost;
-
-    % Filter life change (note: shorter life in leaky = negative change)
-    if ~isnan(tightSum.filter_replaced) && ~isnan(leakySum.filter_replaced)
-        filter_change = 100 * (leakySum.filter_replaced - tightSum.filter_replaced) / tightSum.filter_replaced;
+    % Enhanced sensitivity calculations with zero handling
+    
+    % PM2.5 sensitivity
+    if abs(tightSum.avg_indoor_PM25) < epsilon
+        % Near-zero baseline: use absolute difference
+        pm25_change = leakySum.avg_indoor_PM25 - tightSum.avg_indoor_PM25;
+        pm25_method = 'absolute';
     else
-        filter_change = NaN;
+        % Use symmetric percentage for more stable results
+        avg_pm25 = (tightSum.avg_indoor_PM25 + leakySum.avg_indoor_PM25) / 2;
+        if avg_pm25 > epsilon
+            pm25_change = 100 * (leakySum.avg_indoor_PM25 - tightSum.avg_indoor_PM25) / avg_pm25;
+            pm25_method = 'symmetric_percent';
+        else
+            pm25_change = 0;
+            pm25_method = 'both_zero';
+        end
+    end
+    
+    % PM10 sensitivity
+    if abs(tightSum.avg_indoor_PM10) < epsilon
+        pm10_change = leakySum.avg_indoor_PM10 - tightSum.avg_indoor_PM10;
+        pm10_method = 'absolute';
+    else
+        avg_pm10 = (tightSum.avg_indoor_PM10 + leakySum.avg_indoor_PM10) / 2;
+        if avg_pm10 > epsilon
+            pm10_change = 100 * (leakySum.avg_indoor_PM10 - tightSum.avg_indoor_PM10) / avg_pm10;
+            pm10_method = 'symmetric_percent';
+        else
+            pm10_change = 0;
+            pm10_method = 'both_zero';
+        end
+    end
+    
+    % Cost sensitivity (costs should not be zero, but check anyway)
+    if abs(tightSum.total_cost) < epsilon
+        cost_change = leakySum.total_cost - tightSum.total_cost;
+        cost_method = 'absolute';
+    else
+        % Standard percentage change for cost (usually non-zero)
+        cost_change = 100 * (leakySum.total_cost - tightSum.total_cost) / tightSum.total_cost;
+        cost_method = 'percent';
     end
 
-    % Get cost-effectiveness data
+    % Filter life change
+    if ~isnan(tightSum.filter_replaced) && ~isnan(leakySum.filter_replaced)
+        if abs(tightSum.filter_replaced) < epsilon
+            filter_change = leakySum.filter_replaced - tightSum.filter_replaced;
+            filter_method = 'absolute';
+        else
+            filter_change = 100 * (leakySum.filter_replaced - tightSum.filter_replaced) / tightSum.filter_replaced;
+            filter_method = 'percent';
+        end
+    else
+        filter_change = NaN;
+        filter_method = 'missing';
+    end
+
+    % Get cost-effectiveness data (keep existing logic)
     hasLeakCol = ismember('leakage', costTable.Properties.VariableNames);
     hasBoundCols = all(ismember({'percent_PM25_reduction_lower','percent_PM25_reduction_upper',...
         'cost_per_AQI_hour_avoided_lower','cost_per_AQI_hour_avoided_upper'}, ...
@@ -60,11 +110,20 @@ for i = 1:nScenarios
 
         if ~isempty(tightCost) && ~isempty(leakyCost)
             effectiveness_change = leakyCost.percent_PM25_reduction - tightCost.percent_PM25_reduction;
-            cost_per_aqi_change = 100 * (leakyCost.cost_per_AQI_hour_avoided - ...
-                tightCost.cost_per_AQI_hour_avoided) / tightCost.cost_per_AQI_hour_avoided;
+            
+            % Enhanced cost per AQI calculation
+            if abs(tightCost.cost_per_AQI_hour_avoided) < epsilon
+                cost_per_aqi_change = leakyCost.cost_per_AQI_hour_avoided - tightCost.cost_per_AQI_hour_avoided;
+                cost_per_aqi_method = 'absolute';
+            else
+                cost_per_aqi_change = 100 * (leakyCost.cost_per_AQI_hour_avoided - ...
+                    tightCost.cost_per_AQI_hour_avoided) / tightCost.cost_per_AQI_hour_avoided;
+                cost_per_aqi_method = 'percent';
+            end
         else
             effectiveness_change = NaN;
             cost_per_aqi_change = NaN;
+            cost_per_aqi_method = 'missing';
         end
     elseif hasBoundCols
         rowCost = costTable(strcmp(costTable.location,loc) & ...
@@ -72,70 +131,119 @@ for i = 1:nScenarios
             strcmp(costTable.mode,mode), :);
         if ~isempty(rowCost)
             effectiveness_change = rowCost.percent_PM25_reduction_upper - rowCost.percent_PM25_reduction_lower;
-            if rowCost.cost_per_AQI_hour_avoided_lower > 0
+            if rowCost.cost_per_AQI_hour_avoided_lower > epsilon
                 cost_per_aqi_change = 100 * (rowCost.cost_per_AQI_hour_avoided_upper - ...
                     rowCost.cost_per_AQI_hour_avoided_lower) / rowCost.cost_per_AQI_hour_avoided_lower;
+                cost_per_aqi_method = 'percent';
             else
-                cost_per_aqi_change = NaN;
+                cost_per_aqi_change = rowCost.cost_per_AQI_hour_avoided_upper - rowCost.cost_per_AQI_hour_avoided_lower;
+                cost_per_aqi_method = 'absolute';
             end
         else
             effectiveness_change = NaN;
             cost_per_aqi_change = NaN;
+            cost_per_aqi_method = 'missing';
         end
     else
         effectiveness_change = NaN;
         cost_per_aqi_change = NaN;
+        cost_per_aqi_method = 'missing';
     end
 
-    % Build sensitivity row
+    % Build sensitivity row with methods
     row = table({loc}, {filt}, {mode}, pm25_change, pm10_change, cost_change, ...
         filter_change, effectiveness_change, cost_per_aqi_change, ...
+        {pm25_method}, {pm10_method}, {cost_method}, {filter_method}, ...
         'VariableNames', {'location','filterType','mode', ...
         'pm25_sensitivity','pm10_sensitivity','cost_sensitivity', ...
-        'filter_life_sensitivity','effectiveness_change','cost_effectiveness_sensitivity'});
+        'filter_life_sensitivity','effectiveness_change','cost_effectiveness_sensitivity', ...
+        'pm25_method','pm10_method','cost_method','filter_method'});
 
     sensitivity = [sensitivity; row];
 end
 
-%% Visualization
-% 1. Tornado diagram of sensitivities
+%% Enhanced Visualization with method indicators
+% 1. Tornado diagram of sensitivities (modified to handle mixed methods)
 subplot(2,2,1);
 metrics = {'pm25_sensitivity','pm10_sensitivity','cost_sensitivity','filter_life_sensitivity'};
 metricLabels = {'PM2.5 Conc.','PM10 Conc.','Operating Cost','Filter Life'};
 meanSens = zeros(length(metrics),1);
 
+% Calculate mean absolute sensitivity, normalizing absolute values
 for m = 1:length(metrics)
-    meanSens(m) = mean(abs(sensitivity.(metrics{m})), 'omitnan');
+    values = sensitivity.(metrics{m});
+    methods = sensitivity.([strrep(metrics{m},'_sensitivity','') '_method']);
+    
+    % Normalize absolute values to percentage scale for fair comparison
+    normalized_values = zeros(size(values));
+    for j = 1:length(values)
+        if strcmp(methods{j}, 'absolute')
+            % For absolute values, normalize by typical scale
+            if contains(metrics{m}, 'pm25')
+                normalized_values(j) = values(j) / 10 * 100; % Assume 10 μg/m³ typical scale
+            elseif contains(metrics{m}, 'pm10')
+                normalized_values(j) = values(j) / 20 * 100; % Assume 20 μg/m³ typical scale
+            elseif contains(metrics{m}, 'cost')
+                normalized_values(j) = values(j) / 100 * 100; % Assume $100 typical scale
+            else
+                normalized_values(j) = values(j); % Keep as is
+            end
+        else
+            normalized_values(j) = values(j);
+        end
+    end
+    
+    meanSens(m) = mean(abs(normalized_values), 'omitnan');
 end
 
 [sortedSens, sortIdx] = sort(meanSens, 'descend');
 barh(sortedSens);
 set(gca, 'YTick', 1:length(metrics), 'YTickLabel', metricLabels(sortIdx));
-xlabel('Mean Sensitivity to Envelope Leakage (% change)');
+xlabel('Mean Sensitivity (normalized)');
 title('Tornado Diagram: Parameter Sensitivity');
 grid on;
 
-% 2. Scenario comparison
+% Add note about mixed methods
+text(0.95, 0.05, 'Note: Absolute differences normalized for comparison', ...
+    'Units', 'normalized', 'HorizontalAlignment', 'right', ...
+    'VerticalAlignment', 'bottom', 'FontSize', 8, 'FontStyle', 'italic');
+
+% 2. Scenario comparison (existing code with minor modification)
 subplot(2,2,2);
 scenarioLabels = strcat(sensitivity.location, "-", sensitivity.filterType, "-", sensitivity.mode);
 x = 1:height(sensitivity);
 
+% Create bar data, using absolute values where needed
 barData = [sensitivity.pm25_sensitivity, sensitivity.cost_sensitivity, ...
     sensitivity.filter_life_sensitivity];
 
-% Plot grouped bars and ensure smaller bars are drawn on top
-[~, sortIdx] = sort(max(abs(barData),[],2), 'ascend');
-bar(barData(sortIdx,:), 'grouped');
+% Add markers for absolute value calculations
+hold on;
+bar(barData, 'grouped');
+
+% Mark absolute value calculations with asterisks
+for i = 1:height(sensitivity)
+    if strcmp(sensitivity.pm25_method{i}, 'absolute')
+        text(i, barData(i,1), '*', 'HorizontalAlignment', 'center', ...
+            'VerticalAlignment', 'bottom', 'FontSize', 12, 'FontWeight', 'bold');
+    end
+    if strcmp(sensitivity.cost_method{i}, 'absolute')
+        text(i, barData(i,2), '*', 'HorizontalAlignment', 'center', ...
+            'VerticalAlignment', 'bottom', 'FontSize', 12, 'FontWeight', 'bold');
+    end
+end
 
 xlabel('Scenario');
-ylabel('Sensitivity (% change from tight to leaky)');
+ylabel('Sensitivity (% change or absolute*)');
 title('Envelope Sensitivity by Scenario');
 legend({'PM2.5','Cost','Filter Life'}, 'Location','eastoutside');
-set(gca, 'XTick', x, 'XTickLabel', scenarioLabels(sortIdx));
+set(gca, 'XTick', x, 'XTickLabel', scenarioLabels);
 xtickangle(45);
 grid on;
+text(0.02, 0.98, '* Absolute difference (baseline ≈ 0)', ...
+    'Units', 'normalized', 'VerticalAlignment', 'top', 'FontSize', 8);
 
-% 3. Effectiveness vs Cost Trade-off Changes
+% 3. Effectiveness vs Cost Trade-off Changes (keep existing)
 subplot(2,2,3);
 validIdx = ~isnan(sensitivity.effectiveness_change) & ~isnan(sensitivity.cost_sensitivity);
 scatter(sensitivity.cost_sensitivity(validIdx), ...
@@ -151,7 +259,7 @@ colormap(lines(sum(validIdx)));
 xline(0, '--k');
 yline(0, '--k');
 
-% Annotate quadrants with separate text calls
+% Annotate quadrants
 text(max(xlim)*0.7, max(ylim)*0.9, 'Higher Cost,', ...
     'HorizontalAlignment', 'center', 'FontSize', 9, 'Color', [0.5 0.5 0.5]);
 text(max(xlim)*0.7, max(ylim)*0.8, 'More Effective', ...
@@ -162,41 +270,36 @@ text(min(xlim)*0.3, min(ylim)*0.8, 'Less Effective', ...
     'HorizontalAlignment', 'center', 'FontSize', 9, 'Color', [0.5 0.5 0.5]);
 grid on;
 
-% 4. Grouped bar chart by location and filter type
+% 4. Method summary - show which calculations used which approach
 subplot(2,2,4);
-locations = unique(sensitivity.location);
-filters = unique(sensitivity.filterType);
-modes = unique(sensitivity.mode);
+method_counts = zeros(height(sensitivity), 4); % percent, symmetric_percent, absolute, missing
 
-groupData = zeros(length(locations)*length(filters), length(modes));
-groupLabels = cell(length(locations)*length(filters), 1);
-idx = 0;
+method_types = {'percent', 'symmetric_percent', 'absolute', 'missing', 'both_zero'};
+method_labels = {'Standard %', 'Symmetric %', 'Absolute Δ', 'Missing', 'Both Zero'};
 
-for l = 1:length(locations)
-    for f = 1:length(filters)
-        idx = idx + 1;
-        groupLabels{idx} = sprintf('%s-%s', locations{l}, filters{f});
-        for m = 1:length(modes)
-            row = sensitivity(strcmp(sensitivity.location, locations{l}) & ...
-                strcmp(sensitivity.filterType, filters{f}) & ...
-                strcmp(sensitivity.mode, modes{m}), :);
-            if ~isempty(row)
-                % Use absolute cost sensitivity as the metric
-                groupData(idx, m) = abs(row.cost_sensitivity);
-            end
+for i = 1:height(sensitivity)
+    methods = {sensitivity.pm25_method{i}, sensitivity.pm10_method{i}, ...
+               sensitivity.cost_method{i}, sensitivity.filter_method{i}};
+    for m = 1:length(methods)
+        idx = find(strcmp(methods{m}, method_types));
+        if ~isempty(idx)
+            method_counts(i, idx) = method_counts(i, idx) + 1;
         end
     end
 end
 
-bar(groupData);
-set(gca, 'XTick', 1:idx, 'XTickLabel', groupLabels);
-ylabel('Cost Sensitivity (|%|)');
-title('Cost Sensitivity by Configuration');
-legend(modes, 'Location','eastoutside');
+b = bar(method_counts, 'stacked');
+colormap(lines(length(method_types)));
+set(gca, 'XTick', 1:height(sensitivity));
+set(gca, 'XTickLabel', scenarioLabels);
+ylabel('Number of Metrics');
+legend(method_labels, 'Location', 'best');
+title('Calculation Methods Used');
+xtickangle(45);
 grid on;
 
 % Overall title
-sgtitle('Building Envelope Sensitivity Analysis: Impact of Leakage on System Performance', ...
+sgtitle('Building Envelope Sensitivity Analysis: Impact of Leakage on System Performance (Enhanced)', ...
     'FontSize', 14, 'FontWeight', 'bold');
 
 % Save
