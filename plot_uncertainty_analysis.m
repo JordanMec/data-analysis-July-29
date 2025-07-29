@@ -58,7 +58,7 @@ if isfield(data, 'hourly_ci_pm25')
     % Use TeX interpreter for micro symbol and superscript
     ylabel('Indoor PM2.5 (\mu g/m^3)', 'Interpreter', 'tex');
     title(sprintf('Confidence Intervals - %s', config));
-    legend({'95% CI', 'Mean'}, 'Location', 'best');
+    legend({'Envelope Bounds', 'Mean'}, 'Location', 'best');
     grid on;
 end
 
