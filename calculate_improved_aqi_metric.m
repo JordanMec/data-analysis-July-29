@@ -7,10 +7,10 @@ function improved_aqi_hours = calculate_improved_aqi_metric(baselinePM25, baseli
 %       3. Cumulative exposure reduction
 %   The result is expressed as equivalent hours of AQI improvement.
 
-% EPA AQI breakpoints for PM2.5 and PM10 (25% below EPA thresholds)
-pm25_breakpoints = [0, 9.0, 26.3, 40.5, 75.4, 172.5, 375.4, 500.4];
-pm10_breakpoints = [0, 40.5, 112.5, 168.8, 318.8, 378.8, 493.8, 604];
-aqi_breakpoints  = [0, 50, 100, 150, 200, 300, 400, 500];
+% Updated AQI breakpoints for PM2.5 and PM10
+pm25_breakpoints = [0.0, 9.0, 35.4, 55.4, 125.4, 225.4, 325.4];
+pm10_breakpoints = [0.0, 54.0, 154.0, 254.0, 354.0, 424.0, 604.0];
+aqi_breakpoints  = [0, 50, 100, 150, 200, 300, 500];
 
 % Helper to convert concentration to AQI
 calculate_aqi = @(conc, breaks) interp1(breaks, aqi_breakpoints, conc, 'linear', 'extrap');

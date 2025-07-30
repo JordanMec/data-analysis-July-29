@@ -6,7 +6,7 @@ function investigate_aqi_bounds(summaryTable, costTable, healthExposureTable)
 fprintf('\n=== INVESTIGATING AQI HOURS AVOIDED BOUNDS ===\n\n');
 
 pm25_good = 9.0;
-pm10_good = 40.5;
+pm10_good = 54.0;
 
 fprintf('AQI "Good" Thresholds:\n');
 fprintf('  PM2.5: %.1f \xB5g/m\xB3\n', pm25_good);
