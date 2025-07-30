@@ -13,18 +13,42 @@ for i = 1:length(configs)
     eventAnalysis.(config).location = data.location;
     eventAnalysis.(config).filterType = data.filterType;
 
-    % Detect combined PM2.5/PM10 events based on fixed thresholds
+    % Use fixed detection thresholds so events start/end consistently
     pm25_threshold = 9.1;
     pm10_threshold = 54;
 
+    % Baselines for severity calculations
+    pm25_base_out = prctile(data.outdoor_PM25, params.baseline.percentile);
+    pm10_base_out = prctile(data.outdoor_PM10, params.baseline.percentile);
+
+    % Detect events where both PM2.5 and PM10 exceed their thresholds
     combined_events = find_combined_events(data.outdoor_PM25, data.outdoor_PM10, ...
         pm25_threshold, pm10_threshold, params.detection.min_duration_hours);
 
     % Bounds using tight and leaky indoor data
+    pm25_base_tight = prctile(data.indoor_PM25_tight, params.baseline.percentile);
+    pm10_base_tight = prctile(data.indoor_PM10_tight, params.baseline.percentile);
+    pm25_base_leaky = prctile(data.indoor_PM25_leaky, params.baseline.percentile);
+    pm10_base_leaky = prctile(data.indoor_PM10_leaky, params.baseline.percentile);
+
     events_tight = find_combined_events(data.indoor_PM25_tight, data.indoor_PM10_tight, ...
         pm25_threshold, pm10_threshold, params.detection.min_duration_hours);
     events_leaky = find_combined_events(data.indoor_PM25_leaky, data.indoor_PM10_leaky, ...
         pm25_threshold, pm10_threshold, params.detection.min_duration_hours);
+
+    % Override baseline fields with percentile-based values for severity metrics
+    for j = 1:numel(combined_events)
+        combined_events(j).baseline = pm25_base_out;
+        combined_events(j).baseline_out = pm25_base_out;
+    end
+    for j = 1:numel(events_tight)
+        events_tight(j).baseline = pm25_base_tight;
+        events_tight(j).baseline_out = pm25_base_tight;
+    end
+    for j = 1:numel(events_leaky)
+        events_leaky(j).baseline = pm25_base_leaky;
+        events_leaky(j).baseline_out = pm25_base_leaky;
+    end
 
     total_tight = length(events_tight);
     total_leaky = length(events_leaky);
