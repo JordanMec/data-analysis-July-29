@@ -9,16 +9,17 @@ end
 aqiNames = ["Good","Moderate","Unhealthy for Sensitive Groups", ...
     "Unhealthy","Very Unhealthy","Hazardous"];
 
-% Updated AQI thresholds (\xB5g/m^3)
-% PM2.5: 0-9 (Good), 9-35.4 (Moderate), 35.4-55.4 (Unhealthy for SG),
-%        55.4-125.4 (Unhealthy), 125.4-225.4 (Very Unhealthy),
-%        225.4+ (Hazardous)
-pm25_edges = [0.0, 9.0, 35.4, 55.4, 125.4, 225.4, Inf];
 
-% PM10: 0-54 (Good), 54-154 (Moderate), 154-254 (Unhealthy for SG),
-%       254-354 (Unhealthy), 354-424 (Very Unhealthy),
-%       424+ (Hazardous)
-pm10_edges = [0.0, 54.0, 154.0, 254.0, 354.0, 424.0, Inf];
+% Updated AQI thresholds (\xB5g/m^3)
+% PM2.5: 0-9 (Good), 9.1-35.4 (Moderate), 35.5-55.4 (Unhealthy for SG),
+%        55.5-125.4 (Unhealthy), 125.5-225.4 (Very Unhealthy),
+%        225.5-325.4 (Hazardous)
+pm25_edges = [0.0, 9.0, 35.4, 55.4, 125.4, 225.4, 325.4];
+
+% PM10: 0-54 (Good), 55-154 (Moderate), 155-254 (Unhealthy for SG),
+%       255-354 (Unhealthy), 355-424 (Very Unhealthy),
+%       425-604 (Hazardous)
+pm10_edges = [0.0, 54.0, 154.0, 254.0, 354.0, 424.0, 604.0];
 
 % Use character vectors for robust compatibility with older versions
 combos = unique(summaryTable(:,{'location','leakage','filterType','mode'}),'rows');

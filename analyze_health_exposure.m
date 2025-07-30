@@ -46,8 +46,8 @@ aqiLabels = cellstr(aqiNames);
 
 % ---- Choose breakpoints ----
 disp("Using updated AQI thresholds...");
-pm25_edges = [0.0, 9.0, 35.4, 55.4, 125.4, 225.4, Inf];
-pm10_edges = [0.0, 54.0, 154.0, 254.0, 354.0, 424.0, Inf];
+pm25_edges = [0.0, 9.0, 35.4, 55.4, 125.4, 225.4, 325.4];
+pm10_edges = [0.0, 54.0, 154.0, 254.0, 354.0, 424.0, 604.0];
 
 % ---- Prepare scenarios and output table ----
 allScenarios = ["baseline","active","always_on"];
