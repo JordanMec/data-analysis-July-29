@@ -214,7 +214,11 @@ end
 xlabel('Event Index');
 ylabel('Peak Reduction (%)');
 title('Event Response Metrics by Event');
-legend(legendHandles, strrep(configs,'_',' '), 'Location','best');
+% Filter out any invalid handles in case some configs lacked data
+valid = isgraphics(legendHandles);
+if any(valid)
+    legend(legendHandles(valid), strrep(configs(valid),'_',' '), 'Location','best');
+end
 grid on;
 xlim([0 maxEvents + 1]);
 end
