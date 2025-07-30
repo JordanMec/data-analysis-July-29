@@ -9,9 +9,16 @@ end
 aqiNames = ["Good","Moderate","Unhealthy for Sensitive Groups", ...
     "Unhealthy","Very Unhealthy","Hazardous"];
 
-% 25% reduction from standard EPA breakpoints based on 2024 EPA Mandate
-pm25_edges = [0, 9.0, 26.55, 41.55, 112.8, 187.8, Inf];
-pm10_edges = [0, 40.5, 115.5, 190.5, 265.5, 318.0, Inf];
+% Updated AQI thresholds (\xB5g/m^3)
+% PM2.5: 0-9 (Good), 9-35.4 (Moderate), 35.4-55.4 (Unhealthy for SG),
+%        55.4-125.4 (Unhealthy), 125.4-225.4 (Very Unhealthy),
+%        225.4+ (Hazardous)
+pm25_edges = [0.0, 9.0, 35.4, 55.4, 125.4, 225.4, Inf];
+
+% PM10: 0-54 (Good), 54-154 (Moderate), 154-254 (Unhealthy for SG),
+%       254-354 (Unhealthy), 354-424 (Very Unhealthy),
+%       424+ (Hazardous)
+pm10_edges = [0.0, 54.0, 154.0, 254.0, 354.0, 424.0, Inf];
 
 % Use character vectors for robust compatibility with older versions
 combos = unique(summaryTable(:,{'location','leakage','filterType','mode'}),'rows');

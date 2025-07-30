@@ -115,9 +115,10 @@ for i = 1:height(configs)
     if showThresholds
         switch upper(pmLabel)
             case 'PM2.5'
-                thresh = [9.0 26.55 41.55 112.8 187.8];
+                % Thresholds between AQI categories (above "Good")
+                thresh = [9.0 35.4 55.4 125.4 225.4];
             case 'PM10'
-                thresh = [40.5 115.5 190.5 265.5 318.0];
+                thresh = [54.0 154.0 254.0 354.0 424.0];
             otherwise
                 thresh = [];
         end
