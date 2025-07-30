@@ -79,12 +79,12 @@ for i = 1:height(configs)
         t = 1:minLen;
 
         % Calculate envelope statistics
-        lower = min(seriesT, seriesL);
-        upper = max(seriesT, seriesL);
+        lowerBound = min(seriesT, seriesL);
+        upperBound = max(seriesT, seriesL);
 
         % Force row orientation so "fill" receives matching vector lengths
-        lower = lower(:)';
-        upper = upper(:)';
+        lowerBound = lowerBound(:)';
+        upperBound = upperBound(:)';
         t = t(:)';
         mid = (seriesT + seriesL) / 2;
 
@@ -97,15 +97,15 @@ for i = 1:height(configs)
             lineStyle = '-';
         end
 
-        fill([t fliplr(t)], [lower fliplr(upper)], colors(m,:), ...
+        fill([t fliplr(t)], [lowerBound fliplr(upperBound)], colors(m,:), ...
             'FaceAlpha',alpha, 'EdgeColor','none','HandleVisibility','off');
 
         % Plot mean line
         plot(t, mid, 'Color', colors(m,:), 'LineWidth',2, 'LineStyle',lineStyle);
 
         % Add percentile lines (25th and 75th)
-        pct25 = lower + 0.25*(upper-lower);
-        pct75 = lower + 0.75*(upper-lower);
+        pct25 = lowerBound + 0.25*(upperBound-lowerBound);
+        pct75 = lowerBound + 0.75*(upperBound-lowerBound);
         plot(t, pct25, ':', 'Color', colors(m,:)*0.7, 'LineWidth',1,'HandleVisibility','off');
         plot(t, pct75, ':', 'Color', colors(m,:)*0.7, 'LineWidth',1,'HandleVisibility','off');
 
