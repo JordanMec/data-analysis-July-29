@@ -58,7 +58,7 @@ set(hY, 'DisplayName', 'Median Cost');
 
 xlabel('% Indoor PM10 Reduction from Baseline');
 ylabel('Total Operational Cost ($)');
-title('Cost vs. PM10 Reduction Quadrant Map (with Uncertainty Regions)');
+title('Cost vs. Indoor PM10 Reduction Quadrant Map (with Uncertainty Regions)');
 grid on;
 legend('Location', 'eastoutside');
 

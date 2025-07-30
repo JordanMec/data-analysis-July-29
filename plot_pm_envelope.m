@@ -7,6 +7,14 @@ if nargin < 4 || isempty(pmLabel), pmLabel = 'PM2.5'; end
 if nargin < 5 || isempty(prefix), prefix = 'pm25_envelope'; end
 if nargin < 6 || isempty(showThresholds), showThresholds = false; end
 
+% Determine indoor/outdoor descriptor based on the pmField name
+envLabel = '';
+if contains(lower(pmField), 'indoor')
+    envLabel = 'Indoor';
+elseif contains(lower(pmField), 'outdoor')
+    envLabel = 'Outdoor';
+end
+
 configs = unique(summaryTable(:, {'location','filterType'}));
 
 for i = 1:height(configs)
@@ -105,7 +113,11 @@ for i = 1:height(configs)
     end
 
     xlabel('Hour of Year');
-    ylabel(sprintf('%s Concentration (µg/m³)', pmLabel));
+    if isempty(envLabel)
+        ylabel(sprintf('%s Concentration (µg/m³)', pmLabel));
+    else
+        ylabel(sprintf('%s %s Concentration (µg/m³)', envLabel, pmLabel));
+    end
     title(sprintf('%s - %s: Hourly Concentration Bounds', loc, filt));
         legend(legendEntries, 'Location', 'best');
     grid on;
@@ -173,7 +185,11 @@ for i = 1:height(configs)
         end
     end
 
-    xlabel(sprintf('%s Concentration (µg/m³)', pmLabel));
+    if isempty(envLabel)
+        xlabel(sprintf('%s Concentration (µg/m³)', pmLabel));
+    else
+        xlabel(sprintf('%s %s Concentration (µg/m³)', envLabel, pmLabel));
+    end
     ylabel('Probability');
     title('Distribution Across Building Envelopes');
     legend(modes, 'Location','eastoutside');
@@ -213,8 +229,12 @@ for i = 1:height(configs)
     grid on;
 
     % Overall title
-    sgtitle(sprintf('Comprehensive %s Analysis: %s - %s Filter', pmLabel, loc, filt), ...
-        'FontSize',14,'FontWeight','bold');
+    if isempty(envLabel)
+        sgTitle = sprintf('Comprehensive %s Analysis: %s - %s Filter', pmLabel, loc, filt);
+    else
+        sgTitle = sprintf('Comprehensive %s %s Analysis: %s - %s Filter', envLabel, pmLabel, loc, filt);
+    end
+    sgtitle(sgTitle, 'FontSize',14,'FontWeight','bold');
     % Save
     % Build safe file name components with improved error handling
     locStr = regexprep(loc, '\s+', '_');

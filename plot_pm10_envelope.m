@@ -4,5 +4,5 @@ function plot_pm10_envelope(summaryTable, figuresDir, showThresholds)
 if nargin < 3
     showThresholds = false;
 end
-plot_pm_envelope(summaryTable, figuresDir, 'indoor_PM10', 'PM10', 'pm10_envelope', showThresholds);
+plot_pm_envelope(summaryTable, figuresDir, 'indoor_PM10', 'PM10', 'indoor_pm10_envelope', showThresholds);
 end

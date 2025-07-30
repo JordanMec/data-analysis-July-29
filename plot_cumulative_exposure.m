@@ -9,6 +9,14 @@ if nargin < 3 || isempty(pmField);  pmField  = 'indoor_PM25'; end
 if nargin < 4 || isempty(pmLabel);  pmLabel  = 'PM2.5';        end
 if nargin < 5 || isempty(fileName); fileName = 'cumulative_pm25_exposure.png'; end
 
+% Determine indoor/outdoor descriptor from pmField
+envLabel = '';
+if contains(lower(pmField), 'indoor')
+    envLabel = 'Indoor';
+elseif contains(lower(pmField), 'outdoor')
+    envLabel = 'Outdoor';
+end
+
 if isempty(summaryTable)
     warning('plot_cumulative_exposure: no data provided, skipping plot.');
     return;
@@ -58,12 +66,21 @@ for i = 1:height(uniqueConfigs)
     end
     title(sprintf('%s - %s', loc, filt));
     xlabel('Hour of Year');
-    ylabel(sprintf('Cumulative %s Exposure (µg/m³·h)', pmLabel));
+    if isempty(envLabel)
+        ylabel(sprintf('Cumulative %s Exposure (µg/m³·h)', pmLabel));
+    else
+        ylabel(sprintf('Cumulative %s %s Exposure (µg/m³·h)', envLabel, pmLabel));
+    end
     legend(legendEntries, 'Location','eastoutside');
     grid on;
 end
 
-sgtitle(sprintf('Cumulative Indoor %s Exposure Over Time', pmLabel));
+if isempty(envLabel)
+    sgTxt = sprintf('Cumulative %s Exposure Over Time', pmLabel);
+else
+    sgTxt = sprintf('Cumulative %s %s Exposure Over Time', envLabel, pmLabel);
+end
+sgtitle(sgTxt);
 save_figure(gcf, figuresDir, fileName);
 close(gcf);
 end
